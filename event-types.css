@@ -1,19 +1,7 @@
 /* Event types page */
 
 .page-header {
-  margin-bottom: 28px;
-}
-
-.page-header h1 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 4px;
-}
-
-.page-subtitle {
-  color: var(--text-muted);
-  font-size: 14px;
+  margin-bottom: 24px;
 }
 
 /* Event type cards */

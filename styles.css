@@ -111,6 +111,36 @@ body {
   padding: 24px 32px;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.page-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  max-width: 520px;
+}
+
 /* Summary bar */
 .summary-bar {
   display: grid;
