@@ -605,3 +605,102 @@ body {
 }
 
 .json-raw.open { display: block; }
+
+/* === Typed view (filtered to specific event type) === */
+
+.typed-view-banner {
+  background: var(--bg-surface);
+  padding: 12px 20px;
+}
+
+.typed-view-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.typed-view-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.typed-view-info {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Typed event rows — dynamic grid columns set via inline style */
+.event-row-typed {
+  display: grid;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.event-row-typed:hover:not(.event-row-header) {
+  background: var(--bg-hover);
+}
+
+.event-row-typed.event-row-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  cursor: default;
+  padding: 10px 20px;
+}
+
+.event-row-typed.event-row-header:hover {
+  background: var(--bg-surface);
+}
+
+/* Cell formatting */
+.event-cell {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-cell-empty {
+  color: var(--text-dim);
+}
+
+.event-cell-number {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--amber);
+}
+
+.event-cell-bool {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--purple);
+}
+
+.event-cell-text {
+  color: var(--text);
+}
+
+.event-cell-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.event-cell-pill.pill-green { background: var(--green-dim); color: var(--green); }
+.event-cell-pill.pill-amber { background: var(--amber-dim); color: var(--amber); }
+.event-cell-pill.pill-red { background: var(--red-dim); color: var(--red); }
+.event-cell-pill.pill-purple { background: var(--purple-dim); color: var(--purple); }
+.event-cell-pill.pill-blue { background: var(--accent-dim); color: var(--accent); }
+

@@ -1,3 +1,99 @@
+// Display column config per event type (mirrors event-types.js config)
+const DISPLAY_COLUMNS = {
+  "speakers.inscription.created": {
+    columns: ["delegation", "agenda_item", "position"],
+    labels: ["Delegation", "Agenda Item", "Position"],
+    resolve: (payload) => ({
+      delegation: payload.delegation,
+      agenda_item: payload.agenda_item,
+      position: payload.position,
+    })
+  },
+  "speakers.inscription.withdrawn": {
+    columns: ["agenda_item", "reason", "original_position"],
+    labels: ["Agenda Item", "Reason", "Position"],
+    resolve: (payload) => ({
+      agenda_item: payload.agenda_item,
+      reason: payload.reason,
+      original_position: payload.original_position,
+    })
+  },
+  "document.submitted": {
+    columns: ["symbol", "title", "committee"],
+    labels: ["Symbol", "Title", "Committee"],
+    resolve: (payload) => ({
+      symbol: payload.document?.symbol,
+      title: payload.document?.title,
+      committee: payload.submission?.committee,
+    })
+  },
+  "session.opened": {
+    columns: ["meeting_number", "body", "meeting_type"],
+    labels: ["Meeting", "Body", "Type"],
+    resolve: (payload) => ({
+      meeting_number: payload.meeting_number,
+      body: payload.body,
+      meeting_type: payload.meeting_type,
+    })
+  },
+  "session.closed": {
+    columns: ["meeting_number", "speakers_delivered", "decisions_adopted"],
+    labels: ["Meeting", "Speakers", "Decisions"],
+    resolve: (payload) => ({
+      meeting_number: payload.meeting_number,
+      speakers_delivered: payload.speakers_delivered,
+      decisions_adopted: payload.decisions_adopted,
+    })
+  },
+  "vote.cast": {
+    columns: ["resolution_symbol", "vote", "voting_method"],
+    labels: ["Resolution", "Vote", "Method"],
+    resolve: (payload) => ({
+      resolution_symbol: payload.resolution_symbol,
+      vote: payload.vote,
+      voting_method: payload.voting_method,
+    })
+  },
+  "credential.verified": {
+    columns: ["delegate_name", "mission", "credential_type"],
+    labels: ["Delegate", "Mission", "Credential"],
+    resolve: (payload) => ({
+      delegate_name: payload.delegate_name,
+      mission: payload.mission,
+      credential_type: payload.credential_type,
+    })
+  },
+  "notification.sent": {
+    columns: ["channel", "subject", "delivery_status"],
+    labels: ["Channel", "Subject", "Status"],
+    resolve: (payload) => ({
+      channel: payload.channel,
+      subject: payload.subject,
+      delivery_status: payload.delivery_status,
+    })
+  },
+};
+
+const PILL_MAP = {
+  in_favour: "pill-green",
+  against: "pill-red",
+  abstention: "pill-amber",
+  delivered: "pill-green",
+  pending: "pill-amber",
+  failed: "pill-red",
+  full_powers: "pill-purple",
+  letter_of_credence: "pill-blue",
+  plenary: "pill-blue",
+  formal: "pill-purple",
+  recorded: "pill-blue",
+  email: "pill-blue",
+  sms: "pill-amber",
+  delegation_request: "pill-blue",
+  time_constraint: "pill-amber",
+  general_debate: "pill-blue",
+  right_of_reply: "pill-purple",
+};
+
 // Mock event data with varying payload complexity
 const EVENTS = [
   {
@@ -16,6 +112,24 @@ const EVENTS = [
       position: 14,
       delegation: "Afghanistan",
       requested_by: "First Secretary, Permanent Mission"
+    }
+  },
+  {
+    timestamp: "2026-02-11T18:41:22.008Z",
+    actor_id: "delegate:BRA-001",
+    actor_label: "Mr. Santos (Brazil)",
+    event_type: "speakers.inscription.created",
+    version: "1.2",
+    trace_id: "tr-4a9b1c2e",
+    retention: "1 month",
+    payload: {
+      meeting_id: "GA-80-PLN-047",
+      agenda_item: "71(b)",
+      agenda_title: "Strengthening of the coordination of humanitarian assistance",
+      list_type: "general_debate",
+      position: 15,
+      delegation: "Brazil",
+      requested_by: "Second Secretary, Permanent Mission"
     }
   },
   {
@@ -194,42 +308,99 @@ function payloadPreview(payload) {
   return parts.join("  ·  ");
 }
 
-// Render event list
+// Format a cell value with pill styling for enums
+function formatCellValue(val) {
+  if (val === undefined || val === null) return `<span class="event-cell-empty">—</span>`;
+  if (typeof val === "number") return `<span class="event-cell-number">${val}</span>`;
+  if (typeof val === "boolean") return `<span class="event-cell-bool">${val}</span>`;
+  if (PILL_MAP[val]) return `<span class="event-cell-pill ${PILL_MAP[val]}">${val}</span>`;
+  return `<span class="event-cell-text">${val}</span>`;
+}
+
+// Current filter state
+let currentTypeFilter = "";
+
+// Render event list — switches between generic and typed column view
 function renderEventList() {
   const list = document.getElementById("event-list");
+  const typeFilter = currentTypeFilter;
+  const filteredEvents = typeFilter
+    ? EVENTS.filter(e => e.event_type === typeFilter)
+    : EVENTS;
 
-  // Header
-  let html = `<div class="event-row event-row-header">
-    <div>Timestamp</div>
-    <div>Event</div>
-    <div>Actor</div>
-    <div>Trace</div>
-  </div>`;
+  const displayConfig = typeFilter ? DISPLAY_COLUMNS[typeFilter] : null;
 
-  EVENTS.forEach((evt, idx) => {
-    const cls = getTypeClass(evt.event_type);
-    html += `
-      <div class="event-row" data-idx="${idx}">
+  let html = "";
+
+  if (displayConfig) {
+    // === TYPED VIEW: custom columns from display config ===
+    const colCount = displayConfig.columns.length;
+
+    // Typed view banner
+    html += `<div class="typed-view-banner">
+      <div class="typed-view-banner-inner">
+        <span class="typed-view-badge ${getTypeClass(typeFilter)}">
+          <span class="event-type-dot"></span>
+          ${typeFilter}
+        </span>
+        <span class="typed-view-info">${filteredEvents.length} events · Showing configured display columns</span>
+      </div>
+    </div>`;
+
+    // Header
+    html += `<div class="event-row-typed event-row-header" style="grid-template-columns: 150px ${displayConfig.columns.map(() => '1fr').join(' ')} 180px 90px;">
+      <div>Timestamp</div>
+      ${displayConfig.labels.map(l => `<div>${l}</div>`).join("")}
+      <div>Actor</div>
+      <div>Trace</div>
+    </div>`;
+
+    // Rows
+    filteredEvents.forEach((evt, idx) => {
+      const resolved = displayConfig.resolve(evt.payload);
+      const globalIdx = EVENTS.indexOf(evt);
+      html += `<div class="event-row-typed" data-idx="${globalIdx}" style="grid-template-columns: 150px ${displayConfig.columns.map(() => '1fr').join(' ')} 180px 90px;">
         <div class="event-time">${formatTime(evt.timestamp)}</div>
-        <div class="event-type-cell">
-          <div class="event-type-badge ${cls}">
-            <span class="event-type-dot"></span>
-            ${evt.event_type}
-          </div>
-          <div class="event-payload-preview">${payloadPreview(evt.payload)}</div>
-        </div>
+        ${displayConfig.columns.map(col => `<div class="event-cell">${formatCellValue(resolved[col])}</div>`).join("")}
         <div class="event-actor">${evt.actor_label}</div>
         <div class="event-trace">${evt.trace_id}</div>
       </div>`;
-  });
+    });
+  } else {
+    // === GENERIC VIEW: event type + payload preview ===
+    html += `<div class="event-row event-row-header">
+      <div>Timestamp</div>
+      <div>Event</div>
+      <div>Actor</div>
+      <div>Trace</div>
+    </div>`;
+
+    filteredEvents.forEach((evt) => {
+      const cls = getTypeClass(evt.event_type);
+      const globalIdx = EVENTS.indexOf(evt);
+      html += `
+        <div class="event-row" data-idx="${globalIdx}">
+          <div class="event-time">${formatTime(evt.timestamp)}</div>
+          <div class="event-type-cell">
+            <div class="event-type-badge ${cls}">
+              <span class="event-type-dot"></span>
+              ${evt.event_type}
+            </div>
+            <div class="event-payload-preview">${payloadPreview(evt.payload)}</div>
+          </div>
+          <div class="event-actor">${evt.actor_label}</div>
+          <div class="event-trace">${evt.trace_id}</div>
+        </div>`;
+    });
+  }
 
   list.innerHTML = html;
 
   // Attach click handlers
-  list.querySelectorAll(".event-row:not(.event-row-header)").forEach(row => {
+  list.querySelectorAll(".event-row:not(.event-row-header), .event-row-typed:not(.event-row-header)").forEach(row => {
     row.addEventListener("click", () => {
       const idx = parseInt(row.dataset.idx);
-      openDetail(EVENTS[idx]);
+      if (!isNaN(idx)) openDetail(EVENTS[idx]);
     });
   });
 }
@@ -241,11 +412,9 @@ function renderPayloadValue(value) {
   if (typeof value === "number") return `<span class="payload-value-number">${value}</span>`;
   if (Array.isArray(value)) {
     if (value.length === 0) return `<span class="payload-value-null">[]</span>`;
-    // If array of primitives, show inline
     if (value.every(v => typeof v !== "object")) {
       return value.map(v => `<div class="payload-array-item">${v}</div>`).join("");
     }
-    // Array of objects
     return value.map(v => {
       return `<div class="payload-nested">${renderPayloadTable(v)}</div>`;
     }).join("");
@@ -340,6 +509,24 @@ document.getElementById("detail-close").addEventListener("click", closeDetail);
 document.getElementById("detail-overlay").addEventListener("click", closeDetail);
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeDetail();
+});
+
+// Filter handler
+document.getElementById("filter-type").addEventListener("change", (e) => {
+  currentTypeFilter = e.target.value;
+  renderEventList();
+});
+
+document.querySelector(".filter-btn").addEventListener("click", () => {
+  currentTypeFilter = document.getElementById("filter-type").value;
+  renderEventList();
+});
+
+document.querySelector(".filter-btn-clear").addEventListener("click", () => {
+  document.getElementById("filter-type").value = "";
+  document.getElementById("filter-actor").value = "";
+  currentTypeFilter = "";
+  renderEventList();
 });
 
 // Init
