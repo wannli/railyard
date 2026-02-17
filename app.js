@@ -319,18 +319,43 @@ function formatCellValue(val) {
 
 // Current filter state
 let currentTypeFilter = "";
+let currentActorFilter = "";
+let currentDateFilter = "";
+let currentSearchFilter = "";
+
+// Date range helper
+function checkDateRange(timestamp, range) {
+  const eventDate = new Date(timestamp);
+  const now = new Date();
+  const hoursMap = {
+    "Last 24 hours": 24,
+    "Last 7 days": 168,
+    "Last 30 days": 720
+  };
+  const hours = hoursMap[range];
+  if (!hours) return true;
+  const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
+  return eventDate >= cutoff;
+}
 
 // Render event list — switches between generic and typed column view
 function renderEventList() {
   const list = document.getElementById("event-list");
-  const typeFilter = currentTypeFilter;
-  const filteredEvents = typeFilter
-    ? EVENTS.filter(e => e.event_type === typeFilter)
-    : EVENTS;
-
-  const displayConfig = typeFilter ? DISPLAY_COLUMNS[typeFilter] : null;
+  const filteredEvents = EVENTS.filter(e => {
+    const matchesType = !currentTypeFilter || e.event_type === currentTypeFilter;
+    const matchesActor = !currentActorFilter ||
+      e.actor_label.toLowerCase().includes(currentActorFilter.toLowerCase());
+    const matchesDate = !currentDateFilter || checkDateRange(e.timestamp, currentDateFilter);
+    const matchesSearch = !currentSearchFilter || (
+      e.event_type.toLowerCase().includes(currentSearchFilter.toLowerCase()) ||
+      e.actor_label.toLowerCase().includes(currentSearchFilter.toLowerCase()) ||
+      e.trace_id.toLowerCase().includes(currentSearchFilter.toLowerCase())
+    );
+    return matchesType && matchesActor && matchesDate && matchesSearch;
+  });
 
   let html = "";
+  const displayConfig = currentTypeFilter ? DISPLAY_COLUMNS[currentTypeFilter] : null;
 
   if (displayConfig) {
     // === TYPED VIEW: custom columns from display config ===
@@ -339,9 +364,9 @@ function renderEventList() {
     // Typed view banner
     html += `<div class="typed-view-banner">
       <div class="typed-view-banner-inner">
-        <span class="typed-view-badge ${getTypeClass(typeFilter)}">
+        <span class="typed-view-badge ${getTypeClass(currentTypeFilter)}">
           <span class="event-type-dot"></span>
-          ${typeFilter}
+          ${currentTypeFilter}
         </span>
         <span class="typed-view-info">${filteredEvents.length} events · Showing configured display columns</span>
       </div>
@@ -511,21 +536,35 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") closeDetail();
 });
 
-// Filter handler
+// Filter handlers
 document.getElementById("filter-type").addEventListener("change", (e) => {
   currentTypeFilter = e.target.value;
   renderEventList();
 });
 
-document.querySelector(".filter-btn").addEventListener("click", () => {
-  currentTypeFilter = document.getElementById("filter-type").value;
+document.getElementById("filter-actor").addEventListener("input", (e) => {
+  currentActorFilter = e.target.value;
   renderEventList();
 });
 
+document.getElementById("filter-date").addEventListener("change", (e) => {
+  currentDateFilter = e.target.value;
+  renderEventList();
+});
+
+document.getElementById("filter-search").addEventListener("input", (e) => {
+  currentSearchFilter = e.target.value;
+  renderEventList();
+});
 document.querySelector(".filter-btn-clear").addEventListener("click", () => {
   document.getElementById("filter-type").value = "";
   document.getElementById("filter-actor").value = "";
+  document.getElementById("filter-date").value = "";
+  document.getElementById("filter-search").value = "";
   currentTypeFilter = "";
+  currentActorFilter = "";
+  currentDateFilter = "";
+  currentSearchFilter = "";
   renderEventList();
 });
 

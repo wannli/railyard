@@ -80,15 +80,18 @@
           <input type="text" id="filter-actor" placeholder="Search by actor...">
         </div>
         <div class="filter-group">
+          <label>Search</label>
+          <input type="text" id="filter-search" placeholder="Search events...">
+        </div>
+        <div class="filter-group">
           <label>Date Range</label>
           <select id="filter-date">
-            <option>Last 24 hours</option>
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Custom range</option>
+            <option value="">All time</option>
+            <option value="Last 24 hours">Last 24 hours</option>
+            <option value="Last 7 days">Last 7 days</option>
+            <option value="Last 30 days">Last 30 days</option>
           </select>
         </div>
-        <button class="filter-btn">Apply</button>
         <button class="filter-btn-clear">Clear</button>
       </div>
 
